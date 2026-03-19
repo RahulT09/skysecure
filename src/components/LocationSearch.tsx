@@ -23,11 +23,11 @@ export function LocationSearch({ currentLocation, onLocationChange, isLoading }:
 
   return (
     <form onSubmit={handleSubmit} className="relative w-full max-w-md mx-auto">
-      <div className="relative">
+      <div className="relative flex items-center bg-white rounded-full shadow-lg p-1">
         {isLoading ? (
-          <Loader2 className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-primary animate-spin" />
+          <Loader2 className="absolute left-4 w-5 h-5 text-gray-400 animate-spin" />
         ) : (
-          <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-muted-foreground" />
+          <Search className="absolute left-4 w-5 h-5 text-gray-400" />
         )}
         <input
           type="text"
@@ -35,17 +35,15 @@ export function LocationSearch({ currentLocation, onLocationChange, isLoading }:
           value={searchTerm}
           onChange={(e) => setSearchTerm(e.target.value)}
           disabled={isLoading}
-          className="w-full pl-12 pr-24 py-3 rounded-xl bg-card border border-border
-                     focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary
-                     text-card-foreground placeholder:text-muted-foreground
-                     transition-all duration-200 disabled:opacity-50"
+          className="w-full pl-12 pr-28 py-3.5 bg-transparent border-none focus:outline-none focus:ring-0
+                     text-gray-800 placeholder:text-gray-400 text-[16px] font-medium"
         />
         <button
           type="submit"
           disabled={!searchTerm.trim() || isLoading}
-          className="absolute right-2 top-1/2 -translate-y-1/2 px-4 py-1.5 
-                     bg-primary text-primary-foreground rounded-lg text-sm font-medium
-                     hover:bg-primary/90 disabled:opacity-50 disabled:cursor-not-allowed
+          className="absolute right-1.5 px-6 py-2.5 
+                     bg-[#98CBA4] text-white rounded-full text-[15px] font-bold tracking-wide
+                     hover:bg-[#85B791] disabled:opacity-50 disabled:cursor-not-allowed
                      transition-colors duration-200"
         >
           Search
@@ -53,8 +51,8 @@ export function LocationSearch({ currentLocation, onLocationChange, isLoading }:
       </div>
       
       {/* Current location indicator */}
-      <div className="flex items-center justify-center gap-2 mt-3 text-sm text-muted-foreground">
-        <MapPin className="w-4 h-4" />
+      <div className="flex items-center justify-center gap-1.5 mt-5 text-[15px] font-medium text-white/90">
+        <MapPin className="w-[18px] h-[18px]" />
         <span>Currently showing: {currentLocation}</span>
       </div>
     </form>

@@ -12,6 +12,15 @@ export interface WeatherData {
   timezoneOffset?: number; // Timezone offset in seconds from UTC
   sunrise?: number; // Sunrise time (Unix timestamp)
   sunset?: number; // Sunset time (Unix timestamp)
+  forecast?: ForecastDay[]; // 7-day forecast
+}
+
+export interface ForecastDay {
+  date: Date;
+  maxTemp: number;
+  minTemp: number;
+  condition: WeatherCondition;
+  rainProbability?: number;
 }
 
 export type WeatherCondition = 'sunny' | 'cloudy' | 'rainy' | 'stormy' | 'windy' | 'foggy' | 'snowy';

@@ -12,6 +12,12 @@ import { ModeToggle } from '@/components/ModeToggle';
 import { ChatAssistant } from '@/components/ChatAssistant';
 import { WeatherParticles } from '@/components/WeatherParticles';
 import { LocalGuideChat } from '@/components/LocalGuideChat';
+import { WeeklyForecast } from '@/components/WeeklyForecast';
+import { SunTimeline } from '@/components/SunTimeline';
+import { SunUvMetrics } from '@/components/SunUvMetrics';
+import { ExtraMetrics } from '@/components/ExtraMetrics';
+import { FloatingAiChat } from '@/components/FloatingAiChat';
+import { AiAnalysisBanner } from '@/components/AiAnalysisBanner';
 import { useToast } from '@/hooks/use-toast';
 /**
  * Main Weather App Component
@@ -135,7 +141,7 @@ const Index = () => {
       </div>
 
       {/* Main content */}
-      <div className="relative z-10 container max-w-2xl mx-auto px-4 py-6 md:py-10">
+      <div className="relative z-10 container mx-auto px-4 py-8 md:py-12 max-w-3xl font-sans">
         {/* App Header */}
         <Header onRefresh={handleRefresh} isLoading={isLoading} />
 
@@ -150,9 +156,9 @@ const Index = () => {
 
         {/* Weather Display */}
         {weather && !isLoading ? (
-          <div className="space-y-6">
+          <div className="flex flex-col gap-4">
             {/* Live data indicator */}
-            <div className="flex justify-center">
+            <div className="flex justify-center mb-2">
               <span className={`inline-flex items-center gap-2 px-3 py-1 rounded-full text-xs font-medium
                 ${error ? 'bg-red-500/20 text-red-200' : 'bg-white/20 backdrop-blur-sm'}`}>
                 <span className={`w-2 h-2 rounded-full ${error ? 'bg-red-400' : 'bg-white animate-pulse'}`} />
@@ -160,46 +166,73 @@ const Index = () => {
               </span>
             </div>
 
-            {/* Local Guide Button */}
-            <div className="flex justify-center">
-              <button
-                onClick={() => setIsGuideOpen(true)}
-                className="flex items-center gap-2 px-6 py-3 bg-white/20 backdrop-blur-sm 
-                           hover:bg-white/30 rounded-xl font-medium transition-all duration-200
-                           border border-white/20 shadow-lg hover:shadow-xl hover:scale-105"
-              >
-                <MapPin className="w-5 h-5" />
-                <span>Talk to Local Guide</span>
-              </button>
-            </div>
-
-            {/* Weather Card */}
+            {/* Weather Card (Boxless) */}
             <WeatherCard weather={weather} />
 
-            {/* Mode Toggle */}
-            <div className="flex justify-center">
-              <ModeToggle currentMode={mode} onModeChange={handleModeChange} />
-            </div>
+            {/* AI Weather Analysis Banner */}
+            <AiAnalysisBanner weather={weather} />
+
+            {/* 7-Day Forecast */}
+            {weather.forecast && (
+              <WeeklyForecast forecast={weather.forecast} />
+            )}
+
+            {/* Extra Metrics (Samsung style) */}
+            <ExtraMetrics />
+
+            {/* Local Guide Button - Highly Visible High Contrast */}
+            <button
+              onClick={() => setIsGuideOpen(true)}
+              className="w-full flex items-center justify-center gap-3 px-6 py-[18px] 
+                         bg-white/10 backdrop-blur-md text-white border-2 border-white/40
+                         rounded-[2rem] font-bold text-[19px] tracking-wide
+                         transition-all duration-300 shadow-[0_8px_30px_rgb(0,0,0,0.12)] 
+                         hover:bg-white/20 hover:border-white/60 hover:scale-[1.02] mt-4 mb-2"
+            >
+              <MapPin className="w-6 h-6" />
+              <span>Talk to Local Guide</span>
+            </button>
 
             {/* Chat Assistant */}
-            <ChatAssistant messages={messages} mode={mode} />
+            <div className="w-full pt-2">
+               <div className="flex justify-center mb-4">
+                 <ModeToggle currentMode={mode} onModeChange={handleModeChange} />
+               </div>
+               <ChatAssistant messages={messages} mode={mode} />
+            </div>
+
+            {/* Sun Timeline and UV Metrics */}
+            <div className="mt-16">
+              <SunUvMetrics 
+                uvIndex="High"
+                humidity={weather.humidity}
+                sunrise={weather.sunrise}
+                sunset={weather.sunset}
+                timezoneOffset={weather.timezoneOffset}
+              />
+              <SunTimeline 
+                sunrise={weather.sunrise} 
+                sunset={weather.sunset} 
+                timezoneOffset={weather.timezoneOffset} 
+              />
+            </div>
           </div>
         ) : (
           /* Loading State */
-          <div className="glass-card rounded-2xl p-12 text-center">
-            <div className="w-16 h-16 mx-auto mb-4 rounded-full bg-primary/10 
+          <div className="glass-card rounded-[2.5rem] p-12 text-center">
+            <div className="w-16 h-16 mx-auto mb-4 rounded-full bg-white/20 
                             flex items-center justify-center animate-pulse">
               <span className="text-3xl">🌤️</span>
             </div>
-            <p className="text-muted-foreground">
+            <p className="text-white opacity-80 font-medium">
               Fetching weather for {location}...
             </p>
           </div>
         )}
 
         {/* Footer */}
-        <footer className="mt-10 text-center text-sm opacity-80">
-          <p>WeatherBuddy - Your Smart Travel Companion</p>
+        <footer className="mt-12 text-center text-sm opacity-80">
+          <p className="font-medium"><span className="tracking-[0.15em]">SkySecure</span> - Your Smart Travel Companion</p>
           <p className="mt-1 text-xs opacity-70">
             Made with ❤️ for travelers and locals
           </p>
@@ -212,6 +245,13 @@ const Index = () => {
           weather={weather}
           isOpen={isGuideOpen}
           onClose={() => setIsGuideOpen(false)}
+        />
+      )}
+
+      {/* AI Floating Chat Widget */}
+      {weather && (
+        <FloatingAiChat 
+          weather={weather}
         />
       )}
     </div>

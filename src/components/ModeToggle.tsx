@@ -32,27 +32,23 @@ export function ModeToggle({ currentMode, onModeChange }: ModeToggleProps) {
   ];
 
   return (
-    <div className="flex flex-wrap justify-center gap-2 p-1 bg-muted/50 rounded-xl">
+    <div className="flex flex-wrap justify-center gap-2 p-1.5 bg-[#1A1A1A]/60 backdrop-blur-xl border border-white/10 rounded-[2.5rem]">
       {modes.map((mode) => (
         <button
           key={mode.id}
           onClick={() => onModeChange(mode.id)}
           className={`
-            flex items-center gap-2 px-4 py-2.5 rounded-lg font-medium text-sm
+            flex items-center gap-2 px-5 py-3 rounded-[2rem] font-semibold text-[15px]
             transition-all duration-300 ease-out
             ${
               currentMode === mode.id
-                ? mode.id === 'farmer'
-                  ? 'bg-farmer text-farmer-foreground shadow-md scale-105'
-                  : mode.id === 'activity'
-                  ? 'bg-activity text-activity-foreground shadow-md scale-105'
-                  : 'bg-primary text-primary-foreground shadow-md scale-105'
-                : 'bg-transparent text-muted-foreground hover:bg-card hover:text-foreground'
+                ? 'bg-white text-black shadow-lg scale-105'
+                : 'bg-transparent text-white/50 hover:bg-white/10 hover:text-white/90 cursor-pointer'
             }
           `}
         >
-          <span className="text-base">{mode.emoji}</span>
-          <span className="hidden sm:inline">{mode.label}</span>
+          <span className="text-lg">{mode.emoji}</span>
+          <span className="hidden sm:inline lowercase tracking-wide" style={{ fontVariant: 'small-caps' }}>{mode.label}</span>
         </button>
       ))}
     </div>

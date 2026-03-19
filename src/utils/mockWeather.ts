@@ -39,6 +39,18 @@ export function getMockWeatherData(location: string = 'Mumbai, India'): WeatherD
     rainProbability: Math.round(rainProbability),
     feelsLike: Math.round(baseTemp + (Math.random() * 4 - 2)),
     description: descriptions[condition],
+    sunrise: Math.floor(Date.now() / 1000) - 3600 * 6, // 6 hours ago
+    sunset: Math.floor(Date.now() / 1000) + 3600 * 6, // 6 hours from now
+    forecast: Array.from({ length: 7 }).map((_, i) => {
+      const d = new Date();
+      d.setDate(d.getDate() + i);
+      return {
+        date: d,
+        maxTemp: Math.round(baseTemp + Math.random() * 5),
+        minTemp: Math.round(baseTemp - Math.random() * 5 - 2),
+        condition: conditions[Math.floor(Math.random() * conditions.length)],
+      };
+    }),
   };
 }
 

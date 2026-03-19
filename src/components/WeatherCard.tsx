@@ -11,74 +11,46 @@ interface WeatherCardProps {
  */
 export function WeatherCard({ weather }: WeatherCardProps) {
   return (
-    <div className="glass-card rounded-2xl p-6 md:p-8 animate-slide-up">
-      {/* Location Header */}
-      <div className="text-center mb-6">
-        <h2 className="text-lg font-medium text-muted-foreground">
-          📍 {weather.location}
-        </h2>
-      </div>
+    <div className="w-full flex justify-between items-center animate-slide-up mt-8 mb-4 px-2">
+      
+      {/* Left Column: Location & Temp */}
+      <div className="flex flex-col items-start">
+        
+        {/* Location Header with Line */}
+        <div className="flex items-center gap-3 mb-2">
+          <div className="w-6 h-0.5 bg-amber-400 rounded-full" />
+          <h2 className="text-sm font-bold tracking-[0.2em] text-white uppercase">
+            {weather.location}
+          </h2>
+        </div>
 
-      {/* Main Temperature Display */}
-      <div className="flex items-center justify-center gap-6 mb-8">
-        <WeatherIcon condition={weather.condition} size="xl" />
-        <div className="text-center">
-          <div className="text-6xl md:text-7xl font-light text-foreground">
-            {weather.temperature}°
+        {/* Temperature & Feels Like */}
+        <div className="flex flex-row items-center gap-3 mt-2 flex-nowrap">
+          <div className="flex items-start">
+            <span className="text-[80px] md:text-[120px] leading-[0.85] font-light tracking-tighter text-white">
+              {weather.temperature}
+            </span>
+            <span className="text-3xl md:text-4xl font-light text-white/70 mt-2 md:mt-4">
+              °C
+            </span>
           </div>
-          <div className="text-lg text-muted-foreground capitalize">
-            {weather.condition}
+          
+          <div className="px-3 py-1.5 rounded-full bg-white/10 backdrop-blur-md border border-white/10 text-sm font-medium text-white/90 shadow-sm whitespace-nowrap flex-shrink-0">
+            Feels like {weather.feelsLike}°C
           </div>
         </div>
+
       </div>
 
-      {/* Weather Description */}
-      <p className="text-center text-muted-foreground mb-6">
-        {weather.description}
-      </p>
-
-      {/* Weather Stats Grid */}
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-        <WeatherStat
-          icon={<Thermometer className="w-5 h-5 text-accent" />}
-          label="Feels Like"
-          value={`${weather.feelsLike}°C`}
-        />
-        <WeatherStat
-          icon={<Droplets className="w-5 h-5 text-secondary" />}
-          label="Humidity"
-          value={`${weather.humidity}%`}
-        />
-        <WeatherStat
-          icon={<Wind className="w-5 h-5 text-windy" />}
-          label="Wind"
-          value={`${weather.windSpeed} km/h`}
-        />
-        <WeatherStat
-          icon={<CloudRain className="w-5 h-5 text-rainy" />}
-          label="Rain Chance"
-          value={`${weather.rainProbability}%`}
-        />
+      {/* Right Column: Condition Icon */}
+      <div className="flex flex-col items-center justify-center mr-4">
+         <WeatherIcon condition={weather.condition} size="xl" />
+         <span className="mt-3 text-[15px] font-semibold text-white/90 capitalize tracking-wide drop-shadow-md">
+           {weather.description}
+         </span>
       </div>
+      
     </div>
   );
 }
 
-interface WeatherStatProps {
-  icon: React.ReactNode;
-  label: string;
-  value: string;
-}
-
-/**
- * Individual weather statistic display
- */
-function WeatherStat({ icon, label, value }: WeatherStatProps) {
-  return (
-    <div className="flex flex-col items-center p-3 bg-muted/50 rounded-xl">
-      <div className="mb-2">{icon}</div>
-      <div className="text-xs text-muted-foreground">{label}</div>
-      <div className="text-sm font-semibold text-foreground">{value}</div>
-    </div>
-  );
-}

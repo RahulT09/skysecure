@@ -7,40 +7,54 @@ interface ChatAssistantProps {
 }
 
 /**
+ * Mode-specific bubble color schemes
+ */
+const modeBubbleStyles: Record<AppMode, {
+  bubble: string;
+  border: string;
+  iconTint: string;
+  headerBg: string;
+  headerText: string;
+  title: string;
+  subtitle: string;
+}> = {
+  general: {
+    bubble: 'bg-white/10',
+    border: 'border-white/15',
+    iconTint: 'text-white/70',
+    headerBg: 'bg-primary',
+    headerText: 'text-primary-foreground',
+    title: '☀️ Weather Assistant',
+    subtitle: 'Your friendly weather guide',
+  },
+  farmer: {
+    bubble: 'bg-emerald-500/15',
+    border: 'border-emerald-400/25',
+    iconTint: 'text-emerald-400',
+    headerBg: 'bg-farmer',
+    headerText: 'text-primary-foreground',
+    title: '🌾 Farmer Assistant',
+    subtitle: 'Agricultural weather advice',
+  },
+  activity: {
+    bubble: 'bg-sky-500/15',
+    border: 'border-sky-400/25',
+    iconTint: 'text-sky-400',
+    headerBg: 'bg-activity',
+    headerText: 'text-secondary-foreground',
+    title: '🌍 Activity Advisor',
+    subtitle: 'Daily activity recommendations',
+  },
+};
+
+/**
  * Chat-style weather assistant that displays advice messages
  */
 export function ChatAssistant({ messages, mode }: ChatAssistantProps) {
-  // Get mode-specific styling
-  const getModeStyles = () => {
-    switch (mode) {
-      case 'farmer':
-        return {
-          headerBg: 'bg-farmer',
-          headerText: 'text-primary-foreground',
-          title: '🌾 Farmer Assistant',
-          subtitle: 'Agricultural weather advice',
-        };
-      case 'activity':
-        return {
-          headerBg: 'bg-activity',
-          headerText: 'text-secondary-foreground',
-          title: '🌍 Activity Advisor',
-          subtitle: 'Daily activity recommendations',
-        };
-      default:
-        return {
-          headerBg: 'bg-primary',
-          headerText: 'text-primary-foreground',
-          title: '☀️ Weather Assistant',
-          subtitle: 'Your friendly weather guide',
-        };
-    }
-  };
-
-  const styles = getModeStyles();
+  const styles = modeBubbleStyles[mode];
 
   return (
-    <div className="glass-card rounded-2xl overflow-hidden animate-slide-up">
+    <div className="glass-card rounded-[2.5rem] overflow-hidden animate-slide-up border border-white/20">
       {/* Chat Header */}
       <div className={`${styles.headerBg} ${styles.headerText} px-5 py-4`}>
         <div className="flex items-center gap-3">
@@ -66,6 +80,7 @@ export function ChatAssistant({ messages, mode }: ChatAssistantProps) {
             <ChatBubble 
               key={message.id} 
               message={message} 
+              mode={mode}
               delay={index * 100}
             />
           ))
@@ -77,40 +92,37 @@ export function ChatAssistant({ messages, mode }: ChatAssistantProps) {
 
 interface ChatBubbleProps {
   message: ChatMessage;
+  mode: AppMode;
   delay: number;
 }
 
 /**
- * Individual chat bubble component
+ * Individual chat bubble — styled per mode
  */
-function ChatBubble({ message, delay }: ChatBubbleProps) {
-  // Style based on message type
-  const getTypeStyles = () => {
+function ChatBubble({ message, mode, delay }: ChatBubbleProps) {
+  const modeStyle = modeBubbleStyles[mode];
+
+  // Type-specific icon (independent of mode)
+  const getIcon = () => {
     switch (message.type) {
       case 'warning':
-        return {
-          bg: 'bg-destructive/10 border-destructive/20',
-          icon: <AlertTriangle className="w-4 h-4 text-destructive" />,
-        };
+        return <AlertTriangle className="w-4 h-4 text-amber-400" />;
       case 'tip':
-        return {
-          bg: 'bg-accent/10 border-accent/20',
-          icon: <Lightbulb className="w-4 h-4 text-accent" />,
-        };
+        return <Lightbulb className="w-4 h-4 text-yellow-400" />;
       case 'greeting':
-        return {
-          bg: 'bg-secondary/10 border-secondary/20',
-          icon: <Sparkles className="w-4 h-4 text-secondary" />,
-        };
+        return <Sparkles className={`w-4 h-4 ${modeStyle.iconTint}`} />;
       default:
-        return {
-          bg: 'bg-chat border-chat-border',
-          icon: <MessageCircle className="w-4 h-4 text-primary" />,
-        };
+        return <MessageCircle className={`w-4 h-4 ${modeStyle.iconTint}`} />;
     }
   };
 
-  const styles = getTypeStyles();
+  // Warning messages keep their own distinct bg, others use mode style
+  const getBubbleBg = () => {
+    if (message.type === 'warning') {
+      return 'bg-red-500/10 border-red-400/20';
+    }
+    return `${modeStyle.bubble} ${modeStyle.border}`;
+  };
 
   return (
     <div 
@@ -118,11 +130,12 @@ function ChatBubble({ message, delay }: ChatBubbleProps) {
       style={{ animationDelay: `${delay}ms` }}
     >
       <div className={`
-        flex gap-3 p-4 rounded-2xl rounded-tl-sm border
-        ${styles.bg}
+        flex gap-3 p-5 rounded-[2rem] rounded-tl-xl border backdrop-blur-md
+        transition-colors duration-300
+        ${getBubbleBg()}
       `}>
         <div className="flex-shrink-0 mt-0.5">
-          {styles.icon}
+          {getIcon()}
         </div>
         <p className="text-sm leading-relaxed text-foreground">
           {message.content}

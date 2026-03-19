@@ -59,9 +59,9 @@ export function LocalGuideChat({ weather, isOpen, onClose }: LocalGuideChatProps
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm animate-fade-in">
-      <div className="w-full max-w-lg bg-card rounded-2xl shadow-2xl overflow-hidden max-h-[85vh] flex flex-col">
+      <div className="w-full max-w-lg bg-[#1A1A1A]/95 backdrop-blur-2xl text-white rounded-[2.5rem] shadow-2xl overflow-hidden max-h-[85vh] flex flex-col border border-white/10">
         {/* Header */}
-        <div className="bg-primary text-primary-foreground px-5 py-4 flex items-center justify-between">
+        <div className="bg-black/20 px-5 py-4 flex items-center justify-between">
           <div className="flex items-center gap-3">
             <div className="w-10 h-10 rounded-full bg-white/20 flex items-center justify-center">
               <MapPin className="w-5 h-5" />
@@ -90,8 +90,8 @@ export function LocalGuideChat({ weather, isOpen, onClose }: LocalGuideChatProps
               onClick={() => setActiveTab(tab.id)}
               className={`flex items-center gap-1.5 px-4 py-3 text-sm font-medium whitespace-nowrap transition-colors
                 ${activeTab === tab.id 
-                  ? 'text-primary border-b-2 border-primary bg-primary/5' 
-                  : 'text-muted-foreground hover:text-foreground'
+                  ? 'text-white border-b-2 border-white bg-white/5' 
+                  : 'text-white/50 hover:text-white/80'
                 }`}
             >
               <tab.icon className="w-4 h-4" />
@@ -153,18 +153,18 @@ function ChatTab({
   return (
     <div className="space-y-4">
       {/* Welcome message */}
-      <div className="bg-primary/10 rounded-2xl rounded-tl-sm p-4">
+      <div className="bg-[#98CBA4]/20 rounded-2xl rounded-tl-sm p-4">
         <div className="flex gap-3">
-          <div className="w-8 h-8 rounded-full bg-primary/20 flex items-center justify-center flex-shrink-0">
-            <Compass className="w-4 h-4 text-primary" />
+          <div className="w-8 h-8 rounded-full bg-[#98CBA4]/30 flex items-center justify-center flex-shrink-0">
+            <Compass className="w-4 h-4 text-[#98CBA4]" />
           </div>
-          <p className="text-sm leading-relaxed">{welcomeMessage}</p>
+          <p className="text-sm leading-relaxed text-white/90">{welcomeMessage}</p>
         </div>
       </div>
 
       {/* Community prompt */}
-      <div className="bg-accent/10 rounded-xl p-4 border border-accent/20">
-        <p className="text-sm text-center">{getCommunityPrompt()}</p>
+      <div className="bg-white/5 rounded-2xl p-4 border border-white/10">
+        <p className="text-sm text-center text-white/80">{getCommunityPrompt()}</p>
       </div>
 
       {/* Add tip form */}
@@ -174,8 +174,8 @@ function ChatTab({
           placeholder="Your name"
           value={userName}
           onChange={(e) => setUserName(e.target.value)}
-          className="w-full px-4 py-2 rounded-lg bg-muted border border-border text-foreground
-                     placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary/30 text-sm"
+          className="w-full px-4 py-3 rounded-xl bg-white/10 border border-white/20 text-white
+                     placeholder:text-white/40 focus:outline-none focus:ring-2 focus:ring-[#98CBA4]/50 text-sm"
         />
         <div className="flex gap-2">
           <input
@@ -183,17 +183,17 @@ function ChatTab({
             placeholder="Share your tip or experience..."
             value={newTip}
             onChange={(e) => setNewTip(e.target.value)}
-            className="flex-1 px-4 py-2 rounded-lg bg-muted border border-border text-foreground
-                       placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary/30 text-sm"
+            className="flex-1 px-4 py-3 rounded-xl bg-white/10 border border-white/20 text-white
+                       placeholder:text-white/40 focus:outline-none focus:ring-2 focus:ring-[#98CBA4]/50 text-sm"
           />
           <button
             type="submit"
             disabled={!newTip.trim() || !userName.trim()}
-            className="px-4 py-2 bg-primary text-primary-foreground rounded-lg
-                       hover:bg-primary/90 disabled:opacity-50 disabled:cursor-not-allowed
-                       transition-colors"
+            className="px-5 py-3 bg-[#98CBA4] text-white rounded-xl font-medium
+                       hover:bg-[#85B791] disabled:opacity-50 disabled:cursor-not-allowed
+                       transition-colors shadow-lg"
           >
-            <Send className="w-4 h-4" />
+            <Send className="w-5 h-5" />
           </button>
         </div>
       </form>
@@ -201,26 +201,26 @@ function ChatTab({
       {/* User tips */}
       {userTips.length > 0 && (
         <div className="space-y-3">
-          <h4 className="text-sm font-medium text-muted-foreground">Community Tips</h4>
+          <h4 className="text-sm font-medium text-white/60 px-1">Community Tips</h4>
           {userTips.map(tip => (
-            <div key={tip.id} className="bg-secondary/30 rounded-xl p-4 space-y-2">
-              <div className="flex items-center gap-2">
-                <div className="w-6 h-6 rounded-full bg-primary/20 flex items-center justify-center">
-                  <User className="w-3 h-3 text-primary" />
+            <div key={tip.id} className="bg-white/5 border border-white/10 rounded-2xl p-4 space-y-2">
+              <div className="flex items-center gap-2 mb-1">
+                <div className="w-6 h-6 rounded-full bg-[#98CBA4]/20 flex items-center justify-center">
+                  <User className="w-3 h-3 text-[#98CBA4]" />
                 </div>
-                <span className="text-sm font-medium">{tip.author}</span>
-                <span className="text-xs text-muted-foreground">
-                  {new Date(tip.timestamp).toLocaleTimeString()}
+                <span className="text-sm font-medium text-white/90">{tip.author}</span>
+                <span className="text-xs text-white/40 ml-auto">
+                  {new Date(tip.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
                 </span>
               </div>
-              <p className="text-sm pl-8">{tip.content}</p>
+              <p className="text-[15px] text-white/80 leading-relaxed">{tip.content}</p>
               <button
                 onClick={() => onLikeTip(tip.id)}
-                className="flex items-center gap-1 text-xs text-muted-foreground hover:text-primary transition-colors ml-8"
+                className="flex items-center gap-1.5 text-xs text-white/50 hover:text-[#98CBA4] transition-colors pt-2 border-t border-white/5 w-full mt-2"
               >
-                <ThumbsUp className="w-3 h-3" />
-                {tip.likes > 0 && <span>{tip.likes}</span>}
-                <span>Helpful</span>
+                <ThumbsUp className="w-3.5 h-3.5" />
+                {tip.likes > 0 && <span className="font-medium">{tip.likes}</span>}
+                <span className="font-medium">Helpful</span>
               </button>
             </div>
           ))}
@@ -246,16 +246,16 @@ function AdviceList({ items, title, icon }: AdviceListProps) {
   if (items.length === 0) return null;
 
   return (
-    <div className="space-y-3">
-      <h4 className="flex items-center gap-2 font-medium">
-        <span>{icon}</span>
+    <div className="space-y-3 mb-6">
+      <h4 className="flex items-center gap-2.5 font-semibold text-white/90 px-1 text-[17px]">
+        <span className="text-xl">{icon}</span>
         {title}
       </h4>
-      <div className="space-y-2">
+      <div className="space-y-3">
         {items.map((item, index) => (
           <div
             key={index}
-            className="bg-secondary/30 rounded-xl p-3 text-sm leading-relaxed animate-fade-in"
+            className="bg-white/5 border border-white/10 rounded-2xl p-4 text-[15px] leading-relaxed text-white/80 animate-fade-in shadow-sm"
             style={{ animationDelay: `${index * 50}ms` }}
           >
             {item}
