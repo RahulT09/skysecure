@@ -467,40 +467,40 @@
 
 /* ===== DAY TIME BACKGROUNDS ===== */
 .weather-bg-sunny {
-  background: linear-gradient(160deg, hsl(200 90% 55%) 0%, hsl(210 80% 40%) 100%);
+  background: linear-gradient(160deg, hsl(200 92% 58%) 0%, hsl(205 85% 50%) 40%, hsl(215 80% 42%) 100%);
 }
 
 .weather-bg-rainy {
-  background: linear-gradient(160deg, hsl(220 40% 30%) 0%, hsl(210 50% 40%) 100%);
+  background: linear-gradient(160deg, hsl(215 45% 28%) 0%, hsl(210 40% 35%) 40%, hsl(220 35% 42%) 100%);
 }
 
 .weather-bg-cloudy {
-  background: linear-gradient(160deg, hsl(220 15% 45%) 0%, hsl(220 20% 60%) 100%);
+  background: linear-gradient(160deg, hsl(215 18% 50%) 0%, hsl(210 14% 58%) 35%, hsl(220 12% 64%) 70%, hsl(215 16% 55%) 100%);
 }
 
 .weather-bg-snowy {
-  background: linear-gradient(160deg, hsl(210 30% 75%) 0%, hsl(200 20% 85%) 100%);
+  background: linear-gradient(160deg, hsl(210 35% 80%) 0%, hsl(205 30% 86%) 40%, hsl(215 25% 90%) 100%);
 }
 
 .weather-bg-stormy {
-  background: linear-gradient(160deg, hsl(240 40% 15%) 0%, hsl(220 45% 25%) 100%);
+  background: linear-gradient(160deg, hsl(250 45% 12%) 0%, hsl(235 50% 18%) 40%, hsl(220 45% 22%) 100%);
 }
 
 /* ===== NIGHT TIME BACKGROUNDS ===== */
 .weather-bg-night-clear {
-  background: linear-gradient(160deg, hsl(230 60% 8%) 0%, hsl(240 50% 15%) 100%);
+  background: linear-gradient(160deg, hsl(232 65% 6%) 0%, hsl(240 50% 12%) 50%, hsl(250 45% 18%) 100%);
 }
 
 .weather-bg-night-cloudy {
-  background: linear-gradient(160deg, hsl(220 45% 10%) 0%, hsl(230 40% 20%) 100%);
+  background: linear-gradient(160deg, hsl(220 50% 8%) 0%, hsl(225 42% 14%) 40%, hsl(230 38% 20%) 100%);
 }
 
 .weather-bg-night-rainy {
-  background: linear-gradient(160deg, hsl(225 55% 5%) 0%, hsl(220 50% 15%) 100%);
+  background: linear-gradient(160deg, hsl(225 60% 4%) 0%, hsl(220 55% 10%) 40%, hsl(215 48% 16%) 100%);
 }
 
 .weather-bg-night-snowy {
-  background: linear-gradient(160deg, hsl(230 35% 15%) 0%, hsl(220 30% 25%) 100%);
+  background: linear-gradient(160deg, hsl(230 40% 12%) 0%, hsl(225 35% 18%) 50%, hsl(220 32% 24%) 100%);
 }
 
 /* Smooth transition for background changes */
@@ -564,4 +564,32 @@
 
 .glass-card .text-muted-foreground {
   color: hsl(220 10% 45%);
+}
+
+/* ===== MOBILE / PHONE RESPONSIVENESS ===== */
+@media (max-width: 480px) {
+  /* Glass cards: tighter rounding & padding on mobile */
+  .glass-card {
+    border-radius: 1.5rem !important;
+  }
+
+  /* Weather particles: scale down on mobile */
+  .sun-container {
+    width: 140px;
+    height: 140px;
+    top: -30px;
+    right: -30px;
+  }
+  .moon-container {
+    width: 80px;
+    height: 80px;
+    top: 12px;
+    right: 20px;
+  }
+  .moon {
+    font-size: 40px;
+  }
+  .cloud {
+    font-size: 50px;
+  }
 }
