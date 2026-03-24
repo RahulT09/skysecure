@@ -70,7 +70,7 @@ export function ExtraMetrics() {
           The Weather Channel
         </span>
         <span>
-          Updated {new Date().toLocaleDateString()}{" "}
+          Updated {new Date().toLocaleDateString()}{" "} //v
           {new Date().toLocaleTimeString([], {
             hour: "2-digit",
             minute: "2-digit",
