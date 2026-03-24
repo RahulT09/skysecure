@@ -1,5 +1,6 @@
 import { useState, useEffect, useCallback } from 'react';
-import { MapPin } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
+import { MapPin, Sprout } from 'lucide-react';
 import { WeatherData, AppMode, ChatMessage } from '@/types/weather';
 import { fetchWeatherData, fetchWeatherByLocation, getUserLocation } from '@/utils/weatherApi';
 import { getMockWeatherData } from '@/utils/mockWeather';
@@ -25,6 +26,7 @@ import { useToast } from '@/hooks/use-toast';
  */
 const Index = () => {
   const { toast } = useToast();
+  const navigate = useNavigate();
   
   // State management
   const [location, setLocation] = useState<string>('Mumbai, India');
@@ -180,6 +182,19 @@ const Index = () => {
             {/* Extra Metrics (Samsung style) */}
             <ExtraMetrics />
 
+            {/* Farmer Mode Button */}
+            <button
+              onClick={() => navigate('/farmer')}
+              className="w-full flex items-center justify-center gap-3 px-6 py-[18px] 
+                         bg-emerald-500/20 backdrop-blur-md text-white border-2 border-emerald-400/40
+                         rounded-[2rem] font-bold text-[19px] tracking-wide
+                         transition-all duration-300 shadow-[0_8px_30px_rgb(0,0,0,0.12)] 
+                         hover:bg-emerald-500/30 hover:border-emerald-400/60 hover:scale-[1.02] mt-4"
+            >
+              <Sprout className="w-6 h-6" />
+              <span>🌾 Farmer Mode</span>
+            </button>
+
             {/* Local Guide Button - Highly Visible High Contrast */}
             <button
               onClick={() => setIsGuideOpen(true)}
@@ -187,7 +202,7 @@ const Index = () => {
                          bg-white/10 backdrop-blur-md text-white border-2 border-white/40
                          rounded-[2rem] font-bold text-[19px] tracking-wide
                          transition-all duration-300 shadow-[0_8px_30px_rgb(0,0,0,0.12)] 
-                         hover:bg-white/20 hover:border-white/60 hover:scale-[1.02] mt-4 mb-2"
+                         hover:bg-white/20 hover:border-white/60 hover:scale-[1.02] mb-2"
             >
               <MapPin className="w-6 h-6" />
               <span>Talk to Local Guide</span>
