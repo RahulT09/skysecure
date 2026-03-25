@@ -11,14 +11,19 @@ interface WeatherTheme {
  * otherwise falls back to timezone-based calculation
  */
 export const isNightTimeAtLocation = (weather?: WeatherData | null): boolean => {
-  if (!weather) {
-    // Fallback to user's local time if no weather data
+  if (!weather || !weather.sys) {
     const hour = new Date().getHours();
-    return hour >= 19 || hour < 6;
+    return hour >= 18 || hour < 6;
   }
 
+  const nowUTC = Math.floor(Date.now() / 1000);
+  const localTime = nowUTC + weather.timezone;
+
+  return localTime < weather.sys.sunrise || localTime > weather.sys.sunset;
+};
+
   // Get current UTC time in seconds
-  const nowUtc = Math.floor(Date.now() / 1000);
+
   
   // If we have sunrise/sunset, use them for accurate day/night
   if (weather.sunrise && weather.sunset) {
