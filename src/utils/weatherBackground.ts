@@ -8,36 +8,26 @@ interface WeatherTheme {
 /**
  * Check if it's currently night time at the location
  * Uses sunrise/sunset times from the API if available,
- * otherwise falls back to timezone-based calculation
+ * otherwise falls back to local time
  */
 export const isNightTimeAtLocation = (weather?: WeatherData | null): boolean => {
+  // ✅ Fallback if no weather data
   if (!weather || !weather.sys) {
     const hour = new Date().getHours();
     return hour >= 18 || hour < 6;
   }
 
+  // ✅ Current UTC time in seconds
   const nowUTC = Math.floor(Date.now() / 1000);
-  const localTime = nowUTC + weather.timezone;
 
-  return localTime < weather.sys.sunrise || localTime > weather.sys.sunset;
-};
+  // ✅ Convert to location's local time using timezone offset
+  const localTime = nowUTC + (weather.timezone || 0);
 
-  // Get current UTC time in seconds
+  const sunrise = weather.sys.sunrise;
+  const sunset = weather.sys.sunset;
 
-  
-  // If we have sunrise/sunset, use them for accurate day/night
-  if (weather.sunrise && weather.sunset) {
-    return nowUtc < weather.sunrise || nowUtc > weather.sunset;
-  }
-  
-  // Fallback: Calculate local time at location using timezone offset
-  const timezoneOffset = weather.timezoneOffset || 0;
-  const localTimeMs = Date.now() + (timezoneOffset * 1000);
-  const localDate = new Date(localTimeMs);
-  const localHour = localDate.getUTCHours();
-  
-  // Night is between 7 PM (19:00) and 6 AM
-  return localHour >= 19 || localHour < 6;
+  // ✅ Night if before sunrise OR after sunset
+  return localTime < sunrise || localTime > sunset;
 };
 
 /**
@@ -45,17 +35,20 @@ export const isNightTimeAtLocation = (weather?: WeatherData | null): boolean => 
  */
 export const isNightTime = (): boolean => {
   const hour = new Date().getHours();
-  return hour >= 19 || hour < 6;
+  return hour >= 18 || hour < 6;
 };
 
 /**
  * Maps weather conditions to CSS background and text classes
- * Automatically adjusts for day/night time at the location
+ * Automatically adjusts for day/night time
  */
-export const getWeatherTheme = (condition: WeatherCondition, weather?: WeatherData | null): WeatherTheme => {
+export const getWeatherTheme = (
+  condition: WeatherCondition,
+  weather?: WeatherData | null
+): WeatherTheme => {
   const isNight = isNightTimeAtLocation(weather);
-  
-  // Night time themes
+
+  // 🌙 Night themes
   if (isNight) {
     const nightThemeMap: Record<WeatherCondition, WeatherTheme> = {
       sunny: { background: 'weather-bg-night-clear', text: 'weather-text-light' },
@@ -66,10 +59,14 @@ export const getWeatherTheme = (condition: WeatherCondition, weather?: WeatherDa
       windy: { background: 'weather-bg-night-cloudy', text: 'weather-text-light' },
       foggy: { background: 'weather-bg-night-cloudy', text: 'weather-text-light' },
     };
-    return nightThemeMap[condition] || { background: 'weather-bg-night-clear', text: 'weather-text-light' };
+
+    return nightThemeMap[condition] || {
+      background: 'weather-bg-night-clear',
+      text: 'weather-text-light',
+    };
   }
 
-  // Day time themes
+  // ☀️ Day themes
   const dayThemeMap: Record<WeatherCondition, WeatherTheme> = {
     sunny: { background: 'weather-bg-sunny', text: 'weather-text-dark' },
     cloudy: { background: 'weather-bg-cloudy', text: 'weather-text-light' },
@@ -80,7 +77,10 @@ export const getWeatherTheme = (condition: WeatherCondition, weather?: WeatherDa
     foggy: { background: 'weather-bg-cloudy', text: 'weather-text-light' },
   };
 
-  return dayThemeMap[condition] || { background: 'weather-bg-sunny', text: 'weather-text-dark' };
+  return dayThemeMap[condition] || {
+    background: 'weather-bg-sunny',
+    text: 'weather-text-dark',
+  };
 };
 
 /**
