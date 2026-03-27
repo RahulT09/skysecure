@@ -1,0 +1,98 @@
+﻿Trying model gemini-2.0-flash-lite, attempt 1
+Rate limited on gemini-2.0-flash-lite. Code: 429
+Trying model gemini-2.0-flash-lite, attempt 2
+Rate limited on gemini-2.0-flash-lite. Code: 429
+Trying model gemini-2.0-flash-lite, attempt 3
+Rate limited on gemini-2.0-flash-lite. Code: 429
+node : Catch block error for 
+gemini-2.0-flash-lite: Rate Limited
+At line:1 char:1
++ node test_gemini.js > 
+test_gemini_out.txt 2>&1
++ ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+~~~~~~~~~~
+    + CategoryInfo          : NotSpec 
+   ified: (Catch block err...e: Rate  
+   Limited:String) [], RemoteExcept   
+ ion
+    + FullyQualifiedErrorId : NativeC 
+   ommandError
+ 
+Trying model gemini-2.0-flash, attempt 1
+Rate limited on gemini-2.0-flash. Code: 429
+Trying model gemini-2.0-flash, attempt 2
+Rate limited on gemini-2.0-flash. Code: 429
+Trying model gemini-2.0-flash, attempt 3
+Rate limited on gemini-2.0-flash. Code: 429
+Catch block error for 
+gemini-2.0-flash: Rate Limited
+Trying model gemini-1.5-flash, attempt 1
+Error on gemini-1.5-flash: {
+  error: {
+    code: 404,
+    message: 'models/gemini-1.5-flash 
+is not found for API version v1beta, 
+or is not supported for 
+generateContent. Call ListModels to 
+see the list of available models and 
+their supported methods.',
+    status: 'NOT_FOUND'
+  }
+}
+Catch block error for 
+gemini-1.5-flash: 
+models/gemini-1.5-flash is not found 
+for API version v1beta, or is not 
+supported for generateContent. Call 
+ListModels to see the list of 
+available models and their supported 
+methods.
+Trying model gemini-1.5-flash, attempt 2
+Error on gemini-1.5-flash: {
+  error: {
+    code: 404,
+    message: 'models/gemini-1.5-flash 
+is not found for API version v1beta, 
+or is not supported for 
+generateContent. Call ListModels to 
+see the list of available models and 
+their supported methods.',
+    status: 'NOT_FOUND'
+  }
+}
+Catch block error for 
+gemini-1.5-flash: 
+models/gemini-1.5-flash is not found 
+for API version v1beta, or is not 
+supported for generateContent. Call 
+ListModels to see the list of 
+available models and their supported 
+methods.
+Trying model gemini-1.5-flash, attempt 3
+Error on gemini-1.5-flash: {
+  error: {
+    code: 404,
+    message: 'models/gemini-1.5-flash 
+is not found for API version v1beta, 
+or is not supported for 
+generateContent. Call ListModels to 
+see the list of available models and 
+their supported methods.',
+    status: 'NOT_FOUND'
+  }
+}
+Catch block error for 
+gemini-1.5-flash: 
+models/gemini-1.5-flash is not found 
+for API version v1beta, or is not 
+supported for generateContent. Call 
+ListModels to see the list of 
+available models and their supported 
+methods.
+Error: All models exhausted
+    at callGeminiWithRetry (file:///C:
+/Mini_Project/weather-companion/test_g
+emini.js:50:9)
+    at 
+process.processTicksAndRejections (nod
+e:internal/process/task_queues:105:5)

@@ -39,12 +39,39 @@ function getWeatherDescription(code: number): string {
 // ─── Geocode city name → coordinates + display name ───
 async function geocodeCity(city: string): Promise<{ lat: number; lon: number; name: string } | null> {
   try {
-    const url = `https://geocoding-api.open-meteo.com/v1/search?name=${encodeURIComponent(city)}&count=1&language=en&format=json`;
+    // 1️⃣ Try highly-accurate Nominatim proxy first (supports small Indian suburbs flawlessly)
+    const proxyUrl = `/api/geocode?q=${encodeURIComponent(city)}`;
+    const proxyRes = await fetch(proxyUrl);
+    
+    if (proxyRes.ok) {
+      const data = await proxyRes.json();
+      if (Array.isArray(data) && data.length > 0) {
+        // Prioritize India matches
+        let r = data.find((item: any) => item.display_name?.includes('India'));
+        if (!r) r = data[0];
+
+        // Ensure name isn't too long by grabbing the first 3 components of the display_name
+        const parts = r.display_name.split(',').map((p: string) => p.trim());
+        const shortName = parts.slice(0, 3).join(', ');
+
+        return { lat: parseFloat(r.lat), lon: parseFloat(r.lon), name: shortName };
+      }
+    }
+  } catch (err) {
+    console.warn('Nominatim proxy failed, falling back to Open-Meteo', err);
+  }
+
+  // 2️⃣ Fallback: Open-Meteo geocoding (best for major global cities only)
+  try {
+    const url = `https://geocoding-api.open-meteo.com/v1/search?name=${encodeURIComponent(city)}&count=5&language=en&format=json`;
     const res = await fetch(url);
     if (!res.ok) return null;
     const data = await res.json();
+    
     if (data.results && data.results.length > 0) {
-      const r = data.results[0];
+      let r = data.results.find((result: any) => result.country === 'India' || result.country_code === 'IN');
+      if (!r) r = data.results[0];
+
       const name = [r.name, r.admin1, r.country].filter(Boolean).join(', ');
       return { lat: r.latitude, lon: r.longitude, name };
     }
@@ -56,34 +83,23 @@ async function geocodeCity(city: string): Promise<{ lat: number; lon: number; na
 
 // ─── Reverse geocode coordinates → location name ───
 async function reverseGeocodeLocation(lat: number, lon: number): Promise<string> {
-  // Try Open-Meteo geocoding first (more reliable, no CORS issues)
+  // Use BigDataCloud free client-side reverse geocoding (No API key, No CORS issues)
   try {
-    const url = `https://geocoding-api.open-meteo.com/v1/search?name=${lat.toFixed(1)},${lon.toFixed(1)}&count=1&language=en&format=json`;
+    const url = `https://api.bigdatacloud.net/data/reverse-geocode-client?latitude=${lat}&longitude=${lon}&localityLanguage=en`;
     const res = await fetch(url);
     if (res.ok) {
       const data = await res.json();
-      if (data.results?.[0]) {
-        const r = data.results[0];
-        return [r.name, r.admin1, r.country].filter(Boolean).join(', ');
-      }
-    }
-  } catch { /* fall through */ }
-
-  // Fallback: Nominatim reverse geocoding
-  try {
-    const res = await fetch(
-      `https://nominatim.openstreetmap.org/reverse?lat=${lat}&lon=${lon}&format=json&zoom=10`,
-      { headers: { 'User-Agent': 'SkySecure-WeatherApp/1.0' } }
-    );
-    if (res.ok) {
-      const data = await res.json();
-      const addr = data?.address;
-      if (addr) {
-        const place = addr.city || addr.town || addr.village || addr.county || '';
-        const state = addr.state || '';
-        const country = addr.country || '';
-        const result = [place, state, country].filter(Boolean).join(', ');
-        if (result) return result;
+      const place = data.city || data.locality || data.principalSubdivision || '';
+      const state = data.principalSubdivision || '';
+      const country = data.countryName || '';
+      
+      // Attempt to return City, Country or City, State, Country
+      if (place && place !== state) {
+        return [place, state, country].filter(Boolean).join(', ');
+      } else if (state) {
+        return [state, country].filter(Boolean).join(', ');
+      } else if (country) {
+        return country;
       }
     }
   } catch { /* fall through */ }
@@ -125,28 +141,20 @@ async function fetchOpenMeteoFull(lat: number, lon: number): Promise<WeatherData
     });
   }
 
-  // Open-Meteo sunrise/sunset are LOCAL ISO strings like "2026-03-24T06:21".
-  // The display components do: new Date((timestamp + timezoneOffset) * 1000) with timeZone:'UTC'
-  // So we need: timestamp = real UTC unix seconds, timezoneOffset = UTC offset in seconds.
-  // Then (timestamp + offset) gives local time seconds, displayed as UTC = correct local time.
-  //
-  // Approach: parse the ISO string WITHOUT 'Z' so JS treats it as local time,
-  // then convert to UTC unix seconds by subtracting the browser's local offset,
-  // but since we want to show the LOCATION's local time (not browser's), we use
-  // the Open-Meteo offset instead.
+  // Format sunrise/sunset as genuine UTC timestamps
+  // Open-Meteo gives local ISO strings ("2026-03-24T06:21").
+  // By treating them as UTC (appending 'Z'), we get the "local time as UTC" seconds.
+  // To get the GENUINE UTC timestamp, we subtract the timezone's UTC offset.
   let sunriseTs: number | undefined;
   let sunsetTs: number | undefined;
 
   if (daily.sunrise?.[0]) {
-    // Treat the time string as UTC by appending Z, divide to get seconds
-    // This gives us the "local time value" as a UTC timestamp
-    const asUtcSeconds = new Date(daily.sunrise[0] + 'Z').getTime() / 1000;
-    // The component will display this directly using timeZone:'UTC' with offset 0
-    sunriseTs = asUtcSeconds;
+    const localAsUtcSeconds = new Date(daily.sunrise[0] + 'Z').getTime() / 1000;
+    sunriseTs = localAsUtcSeconds - utcOffsetSeconds;
   }
   if (daily.sunset?.[0]) {
-    const asUtcSeconds = new Date(daily.sunset[0] + 'Z').getTime() / 1000;
-    sunsetTs = asUtcSeconds;
+    const localAsUtcSeconds = new Date(daily.sunset[0] + 'Z').getTime() / 1000;
+    sunsetTs = localAsUtcSeconds - utcOffsetSeconds;
   }
 
   return {
@@ -158,7 +166,7 @@ async function fetchOpenMeteoFull(lat: number, lon: number): Promise<WeatherData
     rainProbability: rainProb,
     feelsLike: Math.round(current.temperature),
     description: getWeatherDescription(current.weathercode),
-    timezoneOffset: 0, // Set to 0 since sunrise/sunset are already in local time as UTC
+    timezoneOffset: utcOffsetSeconds, // Real UTC offset in seconds
     sunrise: sunriseTs,
     sunset: sunsetTs,
     forecast,

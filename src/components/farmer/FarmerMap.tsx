@@ -42,9 +42,10 @@ async function fetchRoute(
 
 /**
  * Build Google Maps directions URL for navigation
+ * Omitting 'origin' natively forces Google Maps to route from the user's live device location
  */
 function getGoogleMapsUrl(fromLat: number, fromLon: number, toLat: number, toLon: number): string {
-  return `https://www.google.com/maps/dir/?api=1&origin=${fromLat},${fromLon}&destination=${toLat},${toLon}&travelmode=driving`;
+  return `https://www.google.com/maps/dir/?api=1&destination=${toLat},${toLon}&travelmode=driving`;
 }
 
 /**

@@ -11,23 +11,28 @@ interface WeatherTheme {
  * otherwise falls back to local time
  */
 export const isNightTimeAtLocation = (weather?: WeatherData | null): boolean => {
-  // ✅ Fallback if no weather data
-  if (!weather || !weather.sys) {
+  if (!weather) {
+    // Fallback to user's local time if no weather data
     const hour = new Date().getHours();
     return hour >= 18 || hour < 6;
   }
 
-  // ✅ Current UTC time in seconds
-  const nowUTC = Math.floor(Date.now() / 1000);
-
-  // ✅ Convert to location's local time using timezone offset
-  const localTime = nowUTC + (weather.timezone || 0);
-
-  const sunrise = weather.sys.sunrise;
-  const sunset = weather.sys.sunset;
-
-  // ✅ Night if before sunrise OR after sunset
-  return localTime < sunrise || localTime > sunset;
+  // Get current UTC time in seconds
+  const nowUtc = Math.floor(Date.now() / 1000);
+  
+  // If we have sunrise/sunset, use them for accurate day/night
+  if (weather.sunrise && weather.sunset) {
+    return nowUtc < weather.sunrise || nowUtc > weather.sunset;
+  }
+  
+  // Fallback: Calculate local time at location using timezone offset
+  const timezoneOffset = weather.timezoneOffset || 0;
+  const localTimeMs = Date.now() + (timezoneOffset * 1000);
+  const localDate = new Date(localTimeMs);
+  const localHour = localDate.getUTCHours();
+  
+  // Night is between 7 PM (19:00) and 6 AM
+  return localHour >= 19 || localHour < 6;
 };
 
 /**

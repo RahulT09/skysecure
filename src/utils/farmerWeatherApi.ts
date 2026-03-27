@@ -92,34 +92,28 @@ export async function fetchFarmerWeather(lat: number, lon: number): Promise<Weat
 }
 
 /**
- * Reverse geocode coordinates to get a location name using Open-Meteo geocoding
+ * Reverse geocode coordinates to get a location name using BigDataCloud
  */
 export async function reverseGeocode(lat: number, lon: number): Promise<string> {
   try {
-    const response = await axios.get(
-      'https://nominatim.openstreetmap.org/reverse',
-      {
-        params: {
-          lat,
-          lon,
-          format: 'json',
-          zoom: 10,
-        },
-        timeout: 5000,
-        headers: {
-          'User-Agent': 'SkySecure-FarmerMode/1.0',
-        },
+    const url = `https://api.bigdatacloud.net/data/reverse-geocode-client?latitude=${lat}&longitude=${lon}&localityLanguage=en`;
+    const res = await fetch(url);
+    if (res.ok) {
+      const data = await res.json();
+      const place = data.city || data.locality || data.principalSubdivision || '';
+      const state = data.principalSubdivision || '';
+      const country = data.countryName || '';
+      
+      // Attempt to return City, Country or City, State, Country
+      if (place && place !== state) {
+        return [place, state, country].filter(Boolean).join(', ');
+      } else if (state) {
+        return [state, country].filter(Boolean).join(', ');
+      } else if (country) {
+        return country;
       }
-    );
-    const addr = response.data?.address;
-    if (addr) {
-      // Build a nice name: city/town/village, state
-      const place = addr.city || addr.town || addr.village || addr.county || '';
-      const state = addr.state || '';
-      return [place, state].filter(Boolean).join(', ') || response.data.display_name?.split(',').slice(0, 2).join(',') || 'Your Location';
     }
-    return 'Your Location';
-  } catch {
-    return 'Your Location';
-  }
+  } catch { /* fall through */ }
+
+  return 'Your Location';
 }

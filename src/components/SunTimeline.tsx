@@ -60,7 +60,8 @@ export function SunTimeline({ sunrise, sunset, timezoneOffset = 0 }: SunTimeline
             className="absolute -top-3 -ml-3 w-6 h-6 rounded-full bg-amber-300 shadow-[0_0_15px_rgba(252,211,77,0.8)] transition-all duration-1000"
             style={{ 
               left: `${progress}%`,
-              transform: `translateY(${Math.abs((progress - 50) / 50) * 1.5}rem)` // slight vertical dip simulating arc perfectly
+              // y = sin(progress) * max_height. Negative pushes it UP in CSS.
+              transform: `translateY(-${Math.sin((progress / 100) * Math.PI) * 2.5}rem)`
             }}
           />
         </div>

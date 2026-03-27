@@ -16,11 +16,42 @@ const MOCK_PRICES: MarketPrice[] = [
   { crop: 'Rice',      cropHi: 'चावल',     price: 1800, emoji: '🍚' },
   { crop: 'Cotton',    cropHi: 'कपास',     price: 6500, emoji: '🌿' },
   { crop: 'Sugarcane', cropHi: 'गन्ना',    price: 350,  emoji: '🎋' },
-  { crop: 'Soybean',   cropHi: 'सोयाबीन',  price: 4200, emoji: '🫘' },
+  { crop: 'Soybean',   cropHi: 'सोयाबीन',  price: 4200, emoji: '🫛' },
   { crop: 'Maize',     cropHi: 'मक्का',    price: 1900, emoji: '🌽' },
   { crop: 'Mustard',   cropHi: 'सरसों',    price: 5050, emoji: '🌼' },
   { crop: 'Potato',    cropHi: 'आलू',      price: 1200, emoji: '🥔' },
 ];
+
+function getCropEmoji(crop: string): string {
+  const name = crop.toLowerCase();
+
+  if (name.includes("wheat")) return "🌾";
+  if (name.includes("rice") || name.includes("paddy")) return "🍚";
+  if (name.includes("cotton")) return "🌿";
+  if (name.includes("sugar") || name.includes("cane") || name.includes("gur") || name.includes("jaggery")) return "🎋";
+  if (name.includes("soy") || name.includes("bean") || name.includes("gram") || name.includes("dal") || name.includes("lentil") || name.includes("chana") || name.includes("moong") || name.includes("urad") || name.includes("masoor")) return "🫛";
+  if (name.includes("maize") || name.includes("corn") || name.includes("bajra") || name.includes("jowar") || name.includes("ragi") || name.includes("millet")) return "🌽";
+  if (name.includes("mustard") || name.includes("sarso")) return "🌼";
+  if (name.includes("potato") || name.includes("aloo")) return "🥔";
+  if (name.includes("onion")) return "🧅";
+  if (name.includes("tomato")) return "🍅";
+  if (name.includes("chilli") || name.includes("pepper")) return "🌶️";
+  if (name.includes("banana")) return "🍌";
+  if (name.includes("mango")) return "🥭";
+  if (name.includes("apple")) return "🍎";
+  if (name.includes("coconut")) return "🥥";
+  if (name.includes("groundnut") || name.includes("peanut")) return "🥜";
+  if (name.includes("turmeric") || name.includes("haldi")) return "🟡";
+  if (name.includes("garlic")) return "🧄";
+  if (name.includes("ginger")) return "🫚";
+  if (name.includes("tea")) return "🍵";
+  if (name.includes("coffee")) return "☕";
+  if (name.includes("jute")) return "🧵";
+  if (name.includes("tobacco")) return "🍂";
+  if (name.includes("rubber")) return "🌳";
+
+  return "🌱";
+}
 
 /**
  * Fetch market prices from data.gov.in Agmarknet API.
@@ -53,7 +84,7 @@ export async function fetchMarketPrices(): Promise<{
           crop: r.commodity || 'Unknown',
           cropHi: r.commodity || 'Unknown',
           price: parseInt(r.modal_price, 10) || 0,
-          emoji: '📦',
+          emoji: getCropEmoji(r.commodity || ""),
         }));
       return { prices: livePrices, isMock: false };
     }
