@@ -146,9 +146,9 @@ export async function fetchNearbyHotels(lat: number, lon: number): Promise<Hotel
         else name = `Hotel #${i + 1}`;
       }
 
-      // Generate dynamic real image URL via local Vite proxy plugin
-      const imageQuery = `${name} ${tags['addr:city'] || ''} hotel exterior`;
-      const imageUrl = `/api/hotel-image?q=${encodeURIComponent(imageQuery.trim())}`;
+      // Generate dynamic real image URL via LoremFlickr native API
+      const imageQuery = `${name} ${tags['addr:city'] || ''} hotel`;
+      const imageUrl = `https://loremflickr.com/400/250/${encodeURIComponent(imageQuery.replace(/\s+/g, ','))}/all`;
 
       return {
         id: `osm-${el.id}`,
@@ -242,7 +242,7 @@ function getMockHotels(lat: number, lon: number): HotelResult[] {
     { name: 'Budget Stay Express', dlat: -0.003, dlon: 0.018 },
   ];
   return offsets.map((h, i) => {
-    const imageUrl = `/api/hotel-image?q=${encodeURIComponent(h.name + ' exterior')}`;
+    const imageUrl = `https://loremflickr.com/400/250/${encodeURIComponent((h.name + ' hotel exterior').replace(/\s+/g, ','))}/all`;
     return {
       id: `mock-hotel-${i}`,
       name: h.name,

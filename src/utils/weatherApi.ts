@@ -40,8 +40,12 @@ function getWeatherDescription(code: number): string {
 async function geocodeCity(city: string): Promise<{ lat: number; lon: number; name: string } | null> {
   try {
     // 1️⃣ Try highly-accurate Nominatim proxy first (supports small Indian suburbs flawlessly)
-    const proxyUrl = `/api/geocode?q=${encodeURIComponent(city)}`;
-    const proxyRes = await fetch(proxyUrl);
+    const proxyUrl = `https://nominatim.openstreetmap.org/search?q=${encodeURIComponent(city)}&format=json&limit=5`;
+    const proxyRes = await fetch(proxyUrl, {
+      headers: {
+        'Accept-Language': 'en-US'
+      }
+    });
     
     if (proxyRes.ok) {
       const data = await proxyRes.json();
