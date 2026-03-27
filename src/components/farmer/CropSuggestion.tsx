@@ -29,16 +29,16 @@ export function CropSuggestionCard({ temperature, humidity, rainfall }: CropSugg
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
         {crops.map((crop: CropSuggestion, index: number) => (
           <div
-            key={crop.crop}
+            key={crop.nameKey}
             className="flex items-start gap-3 p-4 rounded-2xl bg-white/5 border border-white/10
                        hover:bg-white/10 transition-all duration-300"
             style={{ animationDelay: `${index * 100}ms` }}
           >
             <span className="text-3xl">{crop.emoji}</span>
             <div>
-              <h3 className="font-semibold text-white text-base">{crop.crop}</h3>
+              <h3 className="font-semibold text-white text-base">{t(crop.nameKey)}</h3>
               <p className="text-sm text-white/60 mt-0.5">
-                {lang === 'hi' ? crop.reasonHi : crop.reason}
+                {t(crop.reasonKey)}
               </p>
             </div>
           </div>

@@ -11,11 +11,8 @@ export interface SoilData {
   organicCarbon: number | null;
 }
 
-// ⚠️ Use proxy in dev (fixes CORS)
-const BASE_URL =
-  import.meta.env.DEV
-    ? "https://cors-anywhere.herokuapp.com/https://rest.isric.org/soilgrids/v2.0/properties/query"
-    : "https://rest.isric.org/soilgrids/v2.0/properties/query";
+// ⚠️ Route through local Vite proxy to completely bypass SoilGrids API CORS
+const BASE_URL = "/api/soil";
 
 /**
  * Fetch soil properties (with safe fallback + logging)

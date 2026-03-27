@@ -5,6 +5,7 @@ import axios from 'axios';
 interface FarmerMapProps {
   lat: number;
   lon: number;
+  locationName?: string;
 }
 
 // ─── Mock mandi locations (offsets from user position) ───
@@ -53,7 +54,7 @@ function getGoogleMapsUrl(fromLat: number, fromLon: number, toLat: number, toLon
  * Interactive Leaflet map showing user location, mandi markers,
  * driving routes (via OSRM), and "Navigate" buttons.
  */
-export function FarmerMap({ lat, lon }: FarmerMapProps) {
+export function FarmerMap({ lat, lon, locationName }: FarmerMapProps) {
   const { lang, t } = useLanguage();
   const mapRef = useRef<HTMLDivElement>(null);
   const mapInstanceRef = useRef<any>(null);
@@ -107,7 +108,7 @@ export function FarmerMap({ lat, lon }: FarmerMapProps) {
         // User location marker (blue)
         L.marker([lat, lon])
           .addTo(map)
-          .bindPopup(`<strong>📍 ${t('map.your_location')}</strong>`)
+          .bindPopup(`<strong>📍 ${locationName || t('map.your_location')}</strong>`)
           .openPopup();
 
         // ─── Add mandi markers with route + navigate buttons ───

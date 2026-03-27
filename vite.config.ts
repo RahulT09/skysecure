@@ -82,6 +82,43 @@ function imageProxyPlugin(): Plugin {
           return res.end(JSON.stringify({ error: err.message }));
         }
       });
+
+      // Custom Vite proxy for SoilGrids API (bypasses CORS restrictions)
+      server.middlewares.use('/api/soil', async (req, res) => {
+        try {
+          const url = new URL(req.url || '', `http://${req.headers.host}`);
+          const lat = url.searchParams.get('lat');
+          const lon = url.searchParams.get('lon');
+          const property = url.searchParams.get('property');
+          const depth = url.searchParams.get('depth');
+          const value = url.searchParams.get('value');
+
+          if (!lat || !lon) {
+            res.statusCode = 400;
+            return res.end(JSON.stringify({ error: 'Lat/Lon required' }));
+          }
+
+          const soilUrl = `https://rest.isric.org/soilgrids/v2.0/properties/query?lon=${lon}&lat=${lat}&property=${property}&depth=${depth}&value=${value}`;
+          const response = await fetch(soilUrl, {
+            headers: {
+              'Accept': 'application/json'
+            }
+          });
+
+          if (!response.ok) {
+            res.statusCode = response.status;
+            return res.end(JSON.stringify({ error: 'SoilGrids API failed' }));
+          }
+
+          const data = await response.json();
+          res.setHeader('Content-Type', 'application/json');
+          return res.end(JSON.stringify(data));
+        } catch (err: any) {
+          console.error('[soilProxy] Error:', err.message);
+          res.statusCode = 500;
+          return res.end(JSON.stringify({ error: err.message }));
+        }
+      });
     }
   };
 }

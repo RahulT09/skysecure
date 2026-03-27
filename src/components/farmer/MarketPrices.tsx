@@ -64,7 +64,7 @@ export function MarketPrices() {
             >
               <span className="text-2xl">{item.emoji}</span>
               <span className="text-sm font-semibold text-white text-center">
-                {lang === 'hi' ? item.cropHi : item.crop}
+                {t('crop.' + item.crop.toLowerCase())}
               </span>
               <span className="text-lg font-bold text-emerald-300">
                 ₹{item.price.toLocaleString('en-IN')}

@@ -170,7 +170,7 @@ const FarmerMode = () => {
             <MarketPrices />
 
             {/* Interactive Map */}
-            <FarmerMap lat={coords.lat} lon={coords.lon} />
+            <FarmerMap lat={coords.lat} lon={coords.lon} locationName={locationName} />
           </div>
         )}
 
