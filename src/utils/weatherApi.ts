@@ -1,5 +1,4 @@
 import { WeatherData, WeatherCondition, ForecastDay } from '@/types/weather';
-import { supabase } from '@/integrations/supabase/client';
 
 // ─── Map Open-Meteo WMO weather codes to our weather conditions ───
 function mapWMOCode(code: number): WeatherCondition {
@@ -37,7 +36,7 @@ function getWeatherDescription(code: number): string {
 }
 
 // ─── Geocode city name → coordinates + display name ───
-async function geocodeCity(city: string): Promise<{ lat: number; lon: number; name: string } | null> {
+export async function geocodeCity(city: string): Promise<{ lat: number; lon: number; name: string } | null> {
   try {
     // 1️⃣ Try highly-accurate Nominatim proxy first (supports small Indian suburbs flawlessly)
     const proxyUrl = `https://nominatim.openstreetmap.org/search?q=${encodeURIComponent(city)}&format=json&limit=5`;
@@ -54,9 +53,12 @@ async function geocodeCity(city: string): Promise<{ lat: number; lon: number; na
         let r = data.find((item: any) => item.display_name?.includes('India'));
         if (!r) r = data[0];
 
-        // Ensure name isn't too long by grabbing the first 3 components of the display_name
+        // Build "Suburb, City" or "City, State" — deduplicate adjacent same-name parts
         const parts = r.display_name.split(',').map((p: string) => p.trim());
-        const shortName = parts.slice(0, 3).join(', ');
+        // Remove adjacent duplicates (e.g. "Mumbai, Mumbai" → keep one)
+        const unique = parts.filter((p: string, i: number) => i === 0 || p.toLowerCase() !== parts[i - 1].toLowerCase());
+        // Take first 2 unique parts (suburb+city or city+state)
+        const shortName = unique.slice(0, 2).join(', ');
 
         return { lat: parseFloat(r.lat), lon: parseFloat(r.lon), name: shortName };
       }
@@ -76,7 +78,8 @@ async function geocodeCity(city: string): Promise<{ lat: number; lon: number; na
       let r = data.results.find((result: any) => result.country === 'India' || result.country_code === 'IN');
       if (!r) r = data.results[0];
 
-      const name = [r.name, r.admin1, r.country].filter(Boolean).join(', ');
+      // Only City, State — no country
+      const name = [r.name, r.admin1].filter(Boolean).join(', ');
       return { lat: r.latitude, lon: r.longitude, name };
     }
     return null;
@@ -93,17 +96,21 @@ async function reverseGeocodeLocation(lat: number, lon: number): Promise<string>
     const res = await fetch(url);
     if (res.ok) {
       const data = await res.json();
-      const place = data.city || data.locality || data.principalSubdivision || '';
+      const locality = data.locality || '';
+      const city = data.city || '';
       const state = data.principalSubdivision || '';
-      const country = data.countryName || '';
       
-      // Attempt to return City, Country or City, State, Country
-      if (place && place !== state) {
-        return [place, state, country].filter(Boolean).join(', ');
+      // Build "Suburb, City" or "City, State" format
+      // If locality differs from city, show "Locality, City" (e.g. "Borivali, Mumbai")
+      // Otherwise show "City, State" (e.g. "Mumbai, Maharashtra")
+      if (locality && city && locality.toLowerCase() !== city.toLowerCase()) {
+        return `${locality}, ${city}`;
+      } else if (city && state && city.toLowerCase() !== state.toLowerCase()) {
+        return `${city}, ${state}`;
+      } else if (city) {
+        return city;
       } else if (state) {
-        return [state, country].filter(Boolean).join(', ');
-      } else if (country) {
-        return country;
+        return state;
       }
     }
   } catch { /* fall through */ }
@@ -112,7 +119,92 @@ async function reverseGeocodeLocation(lat: number, lon: number): Promise<string>
 }
 
 // ──────────────────────────────────────────────────────
-// Open-Meteo: Fetch full weather (FREE fallback)
+// OpenWeatherMap: Primary weather API
+// ──────────────────────────────────────────────────────
+
+const OWM_API_KEY = import.meta.env.VITE_OPENWEATHERMAP_API_KEY || '';
+
+/**
+ * Map OpenWeatherMap main condition to our weather types
+ */
+function mapOWMCondition(main: string): WeatherCondition {
+  const m = main.toLowerCase();
+  if (m.includes('clear')) return 'sunny';
+  if (m.includes('cloud')) return 'cloudy';
+  if (m.includes('rain') || m.includes('drizzle')) return 'rainy';
+  if (m.includes('thunder')) return 'stormy';
+  if (m.includes('snow')) return 'snowy';
+  if (m.includes('mist') || m.includes('fog') || m.includes('haze') || m.includes('smoke')) return 'foggy';
+  if (m.includes('wind') || m.includes('squall') || m.includes('tornado')) return 'windy';
+  return 'cloudy';
+}
+
+/**
+ * Fetch weather from OpenWeatherMap (current + 5-day forecast)
+ */
+async function fetchFromOpenWeatherMap(lat: number, lon: number): Promise<WeatherData> {
+  if (!OWM_API_KEY) throw new Error('OpenWeatherMap API key not configured');
+
+  // Fetch current weather and 5-day/3-hour forecast in parallel
+  const [currentRes, forecastRes] = await Promise.all([
+    fetch(`https://api.openweathermap.org/data/2.5/weather?lat=${lat}&lon=${lon}&appid=${OWM_API_KEY}&units=metric`),
+    fetch(`https://api.openweathermap.org/data/2.5/forecast?lat=${lat}&lon=${lon}&appid=${OWM_API_KEY}&units=metric`),
+  ]);
+
+  if (!currentRes.ok) throw new Error(`OpenWeatherMap current weather failed: ${currentRes.status}`);
+  const currentData = await currentRes.json();
+
+  // Build forecast from 5-day/3-hour data → group by day
+  const forecast: ForecastDay[] = [];
+  if (forecastRes.ok) {
+    const forecastData = await forecastRes.json();
+    const dailyMap = new Map<string, { temps: number[]; mins: number[]; codes: string[]; rain: number[] }>();
+
+    for (const item of forecastData.list || []) {
+      const dateKey = item.dt_txt?.split(' ')[0];
+      if (!dateKey) continue;
+      if (!dailyMap.has(dateKey)) {
+        dailyMap.set(dateKey, { temps: [], mins: [], codes: [], rain: [] });
+      }
+      const day = dailyMap.get(dateKey)!;
+      day.temps.push(item.main.temp_max);
+      day.mins.push(item.main.temp_min);
+      day.codes.push(item.weather?.[0]?.main || 'Clouds');
+      day.rain.push(item.pop ? item.pop * 100 : 0);
+    }
+
+    let count = 0;
+    for (const [dateStr, day] of dailyMap) {
+      if (count >= 7) break;
+      forecast.push({
+        date: new Date(dateStr),
+        maxTemp: Math.round(Math.max(...day.temps)),
+        minTemp: Math.round(Math.min(...day.mins)),
+        condition: mapOWMCondition(day.codes[Math.floor(day.codes.length / 2)]),
+        rainProbability: Math.round(Math.max(...day.rain)),
+      });
+      count++;
+    }
+  }
+
+  return {
+    location: '',
+    temperature: Math.round(currentData.main.temp),
+    condition: mapOWMCondition(currentData.weather?.[0]?.main || 'Clouds'),
+    humidity: currentData.main.humidity,
+    windSpeed: Math.round((currentData.wind?.speed || 0) * 3.6), // m/s → km/h
+    rainProbability: forecast[0]?.rainProbability ?? 0,
+    feelsLike: Math.round(currentData.main.feels_like),
+    description: currentData.weather?.[0]?.description || 'Unknown',
+    timezoneOffset: currentData.timezone ?? 0,
+    sunrise: currentData.sys?.sunrise,
+    sunset: currentData.sys?.sunset,
+    forecast,
+  };
+}
+
+// ──────────────────────────────────────────────────────
+// Open-Meteo: Backup fallback weather API (FREE, no key)
 // ──────────────────────────────────────────────────────
 
 async function fetchOpenMeteoFull(lat: number, lon: number): Promise<WeatherData> {
@@ -146,9 +238,6 @@ async function fetchOpenMeteoFull(lat: number, lon: number): Promise<WeatherData
   }
 
   // Format sunrise/sunset as genuine UTC timestamps
-  // Open-Meteo gives local ISO strings ("2026-03-24T06:21").
-  // By treating them as UTC (appending 'Z'), we get the "local time as UTC" seconds.
-  // To get the GENUINE UTC timestamp, we subtract the timezone's UTC offset.
   let sunriseTs: number | undefined;
   let sunsetTs: number | undefined;
 
@@ -170,7 +259,7 @@ async function fetchOpenMeteoFull(lat: number, lon: number): Promise<WeatherData
     rainProbability: rainProb,
     feelsLike: Math.round(current.temperature),
     description: getWeatherDescription(current.weathercode),
-    timezoneOffset: utcOffsetSeconds, // Real UTC offset in seconds
+    timezoneOffset: utcOffsetSeconds,
     sunrise: sunriseTs,
     sunset: sunsetTs,
     forecast,
@@ -178,71 +267,34 @@ async function fetchOpenMeteoFull(lat: number, lon: number): Promise<WeatherData
 }
 
 // ──────────────────────────────────────────────────────
-// Supabase: Try backend first (primary)
-// ──────────────────────────────────────────────────────
-
-async function fetchFromSupabase(body: Record<string, unknown>): Promise<WeatherData | null> {
-  try {
-    const { data, error } = await supabase.functions.invoke('get-weather', { body });
-
-    if (error || data?.error) {
-      console.warn('Supabase weather failed:', error?.message || data?.error);
-      return null;
-    }
-    return data as WeatherData;
-  } catch (err) {
-    console.warn('Supabase weather error:', err);
-    return null;
-  }
-}
-
-/**
- * Merge Open-Meteo forecast + sunrise/sunset into Supabase weather data
- */
-async function enrichWithOpenMeteo(baseData: WeatherData, lat: number, lon: number): Promise<WeatherData> {
-  try {
-    const openMeteo = await fetchOpenMeteoFull(lat, lon);
-    return {
-      ...baseData,
-      forecast: openMeteo.forecast,
-      sunrise: openMeteo.sunrise,
-      sunset: openMeteo.sunset,
-      timezoneOffset: openMeteo.timezoneOffset,
-    };
-  } catch {
-    return baseData;
-  }
-}
-
-// ──────────────────────────────────────────────────────
 // PUBLIC API: fetchWeatherData & fetchWeatherByLocation
-// Strategy: Supabase first → Open-Meteo fallback
+// Strategy: OpenWeatherMap first → Open-Meteo fallback
 // ──────────────────────────────────────────────────────
 
 /**
  * Fetch weather data by city name.
- * Tries Supabase backend first; falls back to Open-Meteo (free) on error.
+ * Tries OpenWeatherMap first; falls back to Open-Meteo (free) on error.
  */
 export async function fetchWeatherData(city: string): Promise<WeatherData> {
-  // Always geocode to get coordinates (needed for forecast/sunrise)
+  // Always geocode to get coordinates
   const coords = await geocodeCity(city);
 
-  // 1️⃣ Try Supabase first
-  const supabaseData = await fetchFromSupabase({ city });
-  if (supabaseData && coords) {
-    const enriched = await enrichWithOpenMeteo(supabaseData, coords.lat, coords.lon);
-    return enriched;
-  }
-  if (supabaseData) {
-    return supabaseData;
-  }
-
-  // 2️⃣ Fallback: Open-Meteo directly
-  console.log('Using Open-Meteo fallback for city:', city);
   if (!coords) {
     throw new Error(`Could not find location: ${city}`);
   }
 
+  // 1️⃣ Try OpenWeatherMap (primary)
+  try {
+    console.log('Fetching weather from OpenWeatherMap for:', city);
+    const weather = await fetchFromOpenWeatherMap(coords.lat, coords.lon);
+    weather.location = coords.name;
+    return weather;
+  } catch (err) {
+    console.warn('OpenWeatherMap failed, falling back to Open-Meteo:', err);
+  }
+
+  // 2️⃣ Fallback: Open-Meteo
+  console.log('Using Open-Meteo fallback for city:', city);
   const weather = await fetchOpenMeteoFull(coords.lat, coords.lon);
   weather.location = coords.name;
   return weather;
@@ -250,23 +302,25 @@ export async function fetchWeatherData(city: string): Promise<WeatherData> {
 
 /**
  * Fetch weather using geolocation coordinates.
- * Tries Supabase backend first; falls back to Open-Meteo (free) on error.
+ * Tries OpenWeatherMap first; falls back to Open-Meteo (free) on error.
  */
 export async function fetchWeatherByLocation(lat: number, lon: number): Promise<WeatherData> {
-  // 1️⃣ Try Supabase first
-  const supabaseData = await fetchFromSupabase({ lat, lon });
-  if (supabaseData) {
-    const enriched = await enrichWithOpenMeteo(supabaseData, lat, lon);
-    return enriched;
+  const locationName = reverseGeocodeLocation(lat, lon);
+
+  // 1️⃣ Try OpenWeatherMap (primary)
+  try {
+    console.log('Fetching weather from OpenWeatherMap for coords:', lat, lon);
+    const weather = await fetchFromOpenWeatherMap(lat, lon);
+    weather.location = await locationName;
+    return weather;
+  } catch (err) {
+    console.warn('OpenWeatherMap failed, falling back to Open-Meteo:', err);
   }
 
-  // 2️⃣ Fallback: Open-Meteo directly
+  // 2️⃣ Fallback: Open-Meteo
   console.log('Using Open-Meteo fallback for coordinates:', lat, lon);
   const weather = await fetchOpenMeteoFull(lat, lon);
-
-  // Get proper location name (not coordinates)
-  weather.location = await reverseGeocodeLocation(lat, lon);
-
+  weather.location = await locationName;
   return weather;
 }
 

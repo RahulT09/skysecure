@@ -73,7 +73,9 @@ export function ExploreMap({ lat, lon, userLat, userLon, places, hotels, transpo
         const allCoords: [number, number][] = [[lat, lon]];
 
         // User location marker (blue — default)
-        L.marker([lat, lon])
+        const markerLat = userLat ?? lat;
+        const markerLon = userLon ?? lon;
+        L.marker([markerLat, markerLon])
           .addTo(map)
           .bindPopup('<strong>📍 Your Location</strong>')
           .openPopup();

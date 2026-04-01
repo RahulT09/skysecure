@@ -2,7 +2,7 @@ import { useState, useEffect, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { MapPin, Sprout, Compass } from 'lucide-react';
 import { WeatherData, AppMode, ChatMessage } from '@/types/weather';
-import { fetchWeatherData, fetchWeatherByLocation, getUserLocation } from '@/utils/weatherApi';
+import { fetchWeatherData, fetchWeatherByLocation, getUserLocation, geocodeCity } from '@/utils/weatherApi';
 import { getMockWeatherData } from '@/utils/mockWeather';
 import { generateWeatherAdvice } from '@/utils/weatherAdvice';
 import { getWeatherTheme } from '@/utils/weatherBackground';
@@ -31,13 +31,14 @@ const Index = () => {
   const navigate = useNavigate();
   
   // State management
-  const [location, setLocation] = useState<string>('Mumbai, India');
+  const [location, setLocation] = useState<string>('Mumbai, Maharashtra');
   const [weather, setWeather] = useState<WeatherData | null>(null);
   const [mode, setMode] = useState<AppMode>('general');
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [isLoading, setIsLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
   const [isGuideOpen, setIsGuideOpen] = useState<boolean>(false);
+  const [userCoords, setUserCoords] = useState<{ lat: number; lon: number } | null>(null);
 
   /**
    * Fetch weather data from the API
@@ -49,7 +50,10 @@ const Index = () => {
     try {
       const data = await fetchWeatherData(searchLocation || location);
       setWeather(data);
-      setLocation(data.location); // Update with formatted location from API
+      setLocation(data.location);
+      // Also geocode to get coords for AQI
+      const coords = await geocodeCity(searchLocation || location);
+      if (coords) setUserCoords({ lat: coords.lat, lon: coords.lon });
     } catch (err: any) {
       console.error('Weather fetch error:', err);
       setError(err.message);
@@ -82,6 +86,7 @@ const Index = () => {
           const data = await fetchWeatherByLocation(coords.lat, coords.lon);
           setWeather(data);
           setLocation(data.location);
+          setUserCoords(coords);
         } catch (err) {
           // Fall back to default city
           fetchWeather();
@@ -182,7 +187,7 @@ const Index = () => {
             )}
 
             {/* Extra Metrics (Samsung style) */}
-            <ExtraMetrics />
+            <ExtraMetrics lat={userCoords?.lat} lon={userCoords?.lon} />
 
             {/* Smart Features Section */}
             <FeatureSection onLocalGuideClick={() => setIsGuideOpen(true)} />

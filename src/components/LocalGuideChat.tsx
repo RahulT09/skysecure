@@ -1,7 +1,14 @@
-import { useState } from 'react';
-import { X, Send, MapPin, ThumbsUp, User, MessageCircle, Compass, Shield, Clock, Utensils } from 'lucide-react';
+import { useState, useEffect } from 'react';
+import { X, Send, MapPin, ThumbsUp, User, MessageCircle, Compass, Shield, Clock, Utensils, Search } from 'lucide-react';
 import { WeatherData, LocalTip, TravelAdvice } from '@/types/weather';
 import { generateTravelAdvice, getWelcomeMessage, getCommunityPrompt } from '@/utils/travelAdvice';
+import {
+  StoredTip,
+  fetchTipsForPlace,
+  addTip,
+  likeTip,
+  extractPlaceName,
+} from '@/utils/localTipsApi';
 
 interface LocalGuideChatProps {
   weather: WeatherData;
@@ -12,41 +19,72 @@ interface LocalGuideChatProps {
 type TabType = 'chat' | 'weather' | 'travel' | 'safety' | 'tips';
 
 /**
- * Local Guide Chat - Interactive travel assistant
+ * Local Guide Chat - Interactive travel assistant with place-based experience sharing
  */
 export function LocalGuideChat({ weather, isOpen, onClose }: LocalGuideChatProps) {
   const [activeTab, setActiveTab] = useState<TabType>('chat');
-  const [userTips, setUserTips] = useState<LocalTip[]>([]);
+  const [communityTips, setCommunityTips] = useState<StoredTip[]>([]);
   const [newTip, setNewTip] = useState('');
   const [userName, setUserName] = useState('');
+  const [placeName, setPlaceName] = useState('');
+  const [searchPlace, setSearchPlace] = useState('');
+  const [isLoadingTips, setIsLoadingTips] = useState(false);
+  const [activeSearchLabel, setActiveSearchLabel] = useState('');
+
+  // Initialize place name from weather location
+  useEffect(() => {
+    if (weather?.location) {
+      const defaultPlace = extractPlaceName(weather.location);
+      setPlaceName(defaultPlace);
+      setSearchPlace(defaultPlace);
+      loadTipsForPlace(defaultPlace);
+    }
+  }, [weather?.location]);
 
   if (!isOpen) return null;
 
   const advice = generateTravelAdvice(weather);
   const welcomeMessage = getWelcomeMessage(weather.location);
 
-  const handleAddTip = (e: React.FormEvent) => {
-    e.preventDefault();
-    if (newTip.trim() && userName.trim()) {
-      const tip: LocalTip = {
-        id: Date.now().toString(),
-        content: newTip.trim(),
-        author: userName.trim(),
-        timestamp: new Date(),
-        category: 'general',
-        likes: 0,
-      };
-      setUserTips(prev => [tip, ...prev]);
-      setNewTip('');
+  async function loadTipsForPlace(place: string) {
+    if (!place.trim()) return;
+    setIsLoadingTips(true);
+    setActiveSearchLabel(place.trim());
+    try {
+      const tips = await fetchTipsForPlace(place.trim());
+      setCommunityTips(tips);
+    } catch (err) {
+      console.error('Failed to load tips:', err);
+    } finally {
+      setIsLoadingTips(false);
     }
+  }
+
+  const handleAddTip = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!newTip.trim() || !userName.trim() || !placeName.trim()) return;
+
+    const savedTip = await addTip(placeName, newTip, userName);
+    if (savedTip) {
+      setCommunityTips(prev => [savedTip, ...prev]);
+    }
+    setNewTip('');
   };
 
-  const handleLikeTip = (tipId: string) => {
-    setUserTips(prev =>
+  const handleLikeTip = async (tipId: string) => {
+    setCommunityTips(prev =>
       prev.map(tip =>
         tip.id === tipId ? { ...tip, likes: tip.likes + 1 } : tip
       )
     );
+    await likeTip(tipId);
+  };
+
+  const handleSearchPlace = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (searchPlace.trim()) {
+      loadTipsForPlace(searchPlace);
+    }
   };
 
   const tabs = [
@@ -105,13 +143,19 @@ export function LocalGuideChat({ weather, isOpen, onClose }: LocalGuideChatProps
           {activeTab === 'chat' && (
             <ChatTab 
               welcomeMessage={welcomeMessage}
-              userTips={userTips}
+              communityTips={communityTips}
               userName={userName}
               setUserName={setUserName}
               newTip={newTip}
               setNewTip={setNewTip}
+              placeName={placeName}
+              searchPlace={searchPlace}
+              setSearchPlace={setSearchPlace}
+              activeSearchLabel={activeSearchLabel}
+              isLoadingTips={isLoadingTips}
               onAddTip={handleAddTip}
               onLikeTip={handleLikeTip}
+              onSearchPlace={handleSearchPlace}
             />
           )}
           {activeTab === 'weather' && <AdviceList items={advice.weather} title="Weather & Climate" icon="🌤️" />}
@@ -131,24 +175,36 @@ export function LocalGuideChat({ weather, isOpen, onClose }: LocalGuideChatProps
 
 interface ChatTabProps {
   welcomeMessage: string;
-  userTips: LocalTip[];
+  communityTips: StoredTip[];
   userName: string;
   setUserName: (name: string) => void;
   newTip: string;
   setNewTip: (tip: string) => void;
+  placeName: string;
+  searchPlace: string;
+  setSearchPlace: (place: string) => void;
+  activeSearchLabel: string;
+  isLoadingTips: boolean;
   onAddTip: (e: React.FormEvent) => void;
   onLikeTip: (id: string) => void;
+  onSearchPlace: (e: React.FormEvent) => void;
 }
 
 function ChatTab({ 
   welcomeMessage, 
-  userTips, 
+  communityTips, 
   userName, 
   setUserName, 
   newTip, 
   setNewTip, 
+  placeName,
+  searchPlace,
+  setSearchPlace,
+  activeSearchLabel,
+  isLoadingTips,
   onAddTip,
-  onLikeTip 
+  onLikeTip,
+  onSearchPlace,
 }: ChatTabProps) {
   return (
     <div className="space-y-4">
@@ -167,16 +223,48 @@ function ChatTab({
         <p className="text-sm text-center text-white/80">{getCommunityPrompt()}</p>
       </div>
 
+      {/* Search experiences by place */}
+      <form onSubmit={onSearchPlace} className="flex gap-2">
+        <div className="relative flex-1">
+          <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-white/40" />
+          <input
+            type="text"
+            placeholder="Search experiences by place..."
+            value={searchPlace}
+            onChange={(e) => setSearchPlace(e.target.value)}
+            className="w-full pl-10 pr-4 py-3 rounded-xl bg-white/10 border border-white/20 text-white
+                       placeholder:text-white/40 focus:outline-none focus:ring-2 focus:ring-cyan-400/50 text-sm"
+          />
+        </div>
+        <button
+          type="submit"
+          disabled={!searchPlace.trim()}
+          className="px-4 py-3 bg-cyan-500/20 text-cyan-300 rounded-xl font-medium border border-cyan-400/30
+                     hover:bg-cyan-500/30 disabled:opacity-50 disabled:cursor-not-allowed
+                     transition-colors text-sm"
+        >
+          <Search className="w-4 h-4" />
+        </button>
+      </form>
+
       {/* Add tip form */}
       <form onSubmit={onAddTip} className="space-y-3">
-        <input
-          type="text"
-          placeholder="Your name"
-          value={userName}
-          onChange={(e) => setUserName(e.target.value)}
-          className="w-full px-4 py-3 rounded-xl bg-white/10 border border-white/20 text-white
-                     placeholder:text-white/40 focus:outline-none focus:ring-2 focus:ring-[#98CBA4]/50 text-sm"
-        />
+        {/* Current location badge (read-only) */}
+        <div className="flex items-center gap-2 px-4 py-2.5 rounded-xl bg-emerald-500/10 border border-emerald-400/20">
+          <MapPin className="w-4 h-4 text-emerald-400 flex-shrink-0" />
+          <span className="text-xs text-white/50">Sharing about:</span>
+          <span className="text-sm font-semibold text-emerald-300">{placeName || 'Your Location'}</span>
+        </div>
+        <div className="flex gap-2">
+          <input
+            type="text"
+            placeholder="Your name"
+            value={userName}
+            onChange={(e) => setUserName(e.target.value)}
+            className="flex-1 px-4 py-3 rounded-xl bg-white/10 border border-white/20 text-white
+                       placeholder:text-white/40 focus:outline-none focus:ring-2 focus:ring-[#98CBA4]/50 text-sm"
+          />
+        </div>
         <div className="flex gap-2">
           <input
             type="text"
@@ -188,7 +276,7 @@ function ChatTab({
           />
           <button
             type="submit"
-            disabled={!newTip.trim() || !userName.trim()}
+            disabled={!newTip.trim() || !userName.trim() || !placeName.trim()}
             className="px-5 py-3 bg-[#98CBA4] text-white rounded-xl font-medium
                        hover:bg-[#85B791] disabled:opacity-50 disabled:cursor-not-allowed
                        transition-colors shadow-lg"
@@ -198,19 +286,34 @@ function ChatTab({
         </div>
       </form>
 
-      {/* User tips */}
-      {userTips.length > 0 && (
+      {/* Community tips */}
+      {isLoadingTips && (
+        <div className="flex items-center justify-center py-6">
+          <div className="w-5 h-5 border-2 border-white/30 border-t-white/80 rounded-full animate-spin" />
+          <span className="ml-3 text-sm text-white/50">Loading experiences...</span>
+        </div>
+      )}
+
+      {!isLoadingTips && communityTips.length > 0 && (
         <div className="space-y-3">
-          <h4 className="text-sm font-medium text-white/60 px-1">Community Tips</h4>
-          {userTips.map(tip => (
+          <h4 className="text-sm font-medium text-white/60 px-1">
+            Experiences about "{activeSearchLabel}" ({communityTips.length})
+          </h4>
+          {communityTips.map(tip => (
             <div key={tip.id} className="bg-white/5 border border-white/10 rounded-2xl p-4 space-y-2">
               <div className="flex items-center gap-2 mb-1">
                 <div className="w-6 h-6 rounded-full bg-[#98CBA4]/20 flex items-center justify-center">
                   <User className="w-3 h-3 text-[#98CBA4]" />
                 </div>
                 <span className="text-sm font-medium text-white/90">{tip.author}</span>
+                {/* Place name badge */}
+                <span className="px-2 py-0.5 rounded-full bg-cyan-500/20 border border-cyan-400/30
+                                 text-[10px] font-bold text-cyan-300 uppercase tracking-wider flex items-center gap-1">
+                  <MapPin className="w-2.5 h-2.5" />
+                  {tip.place_name}
+                </span>
                 <span className="text-xs text-white/40 ml-auto">
-                  {new Date(tip.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                  {new Date(tip.created_at).toLocaleDateString([], { month: 'short', day: 'numeric' })}
                 </span>
               </div>
               <p className="text-[15px] text-white/80 leading-relaxed">{tip.content}</p>
@@ -227,9 +330,9 @@ function ChatTab({
         </div>
       )}
 
-      {userTips.length === 0 && (
+      {!isLoadingTips && communityTips.length === 0 && (
         <p className="text-center text-sm text-muted-foreground py-4">
-          Be the first to share a tip about this place! 🌟
+          No experiences shared for this place yet. Be the first! 🌟
         </p>
       )}
     </div>

@@ -39,6 +39,26 @@ const PLACEHOLDER_IMG =
   'https://images.unsplash.com/photo-1566073771259-6a8506099945?w=400&h=250&fit=crop';
 
 /**
+ * Generate a hotel image URL using curated Unsplash photo URLs.
+ * source.unsplash.com is deprecated, so we use direct photo URLs instead.
+ */
+function getHotelImageUrl(_hotelName: string, index: number): string {
+  const hotelImages = [
+    'https://images.unsplash.com/photo-1566073771259-6a8506099945?w=400&h=250&fit=crop',
+    'https://images.unsplash.com/photo-1551882547-ff40c63fe5fa?w=400&h=250&fit=crop',
+    'https://images.unsplash.com/photo-1520250497591-112f2f40a3f4?w=400&h=250&fit=crop',
+    'https://images.unsplash.com/photo-1564501049412-61c2a3083791?w=400&h=250&fit=crop',
+    'https://images.unsplash.com/photo-1542314831-068cd1dbfeeb?w=400&h=250&fit=crop',
+    'https://images.unsplash.com/photo-1571896349842-33c89424de2d?w=400&h=250&fit=crop',
+    'https://images.unsplash.com/photo-1455587734955-081b22074882?w=400&h=250&fit=crop',
+    'https://images.unsplash.com/photo-1578683010236-d716f9a3f461?w=400&h=250&fit=crop',
+    'https://images.unsplash.com/photo-1445019980597-93fa8acb246c?w=400&h=250&fit=crop',
+    'https://images.unsplash.com/photo-1529290130-4ca3753253ae?w=400&h=250&fit=crop',
+  ];
+  return hotelImages[index % hotelImages.length];
+}
+
+/**
  * Calculate approximate distance between two points (Haversine formula)
  */
 function haversineDistance(lat1: number, lon1: number, lat2: number, lon2: number): number {
@@ -146,9 +166,8 @@ export async function fetchNearbyHotels(lat: number, lon: number): Promise<Hotel
         else name = `Hotel #${i + 1}`;
       }
 
-      // Generate dynamic real image URL via local Vite proxy plugin
-      const imageQuery = `${name} ${tags['addr:city'] || ''} hotel exterior`;
-      const imageUrl = `/api/hotel-image?q=${encodeURIComponent(imageQuery.trim())}`;
+      // Generate image URL using Unsplash (works in both dev and production)
+      const imageUrl = getHotelImageUrl(name, i);
 
       return {
         id: `osm-${el.id}`,
@@ -242,7 +261,7 @@ function getMockHotels(lat: number, lon: number): HotelResult[] {
     { name: 'Budget Stay Express', dlat: -0.003, dlon: 0.018 },
   ];
   return offsets.map((h, i) => {
-    const imageUrl = `/api/hotel-image?q=${encodeURIComponent(h.name + ' exterior')}`;
+    const imageUrl = getHotelImageUrl(h.name, i);
     return {
       id: `mock-hotel-${i}`,
       name: h.name,

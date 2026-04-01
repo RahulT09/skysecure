@@ -14,7 +14,39 @@ export type Database = {
   }
   public: {
     Tables: {
-      [_ in never]: never
+      local_tips: {
+        Row: {
+          id: string
+          place_name: string
+          place_name_normalized: string
+          content: string
+          author: string
+          category: string
+          likes: number
+          created_at: string
+        }
+        Insert: {
+          id?: string
+          place_name: string
+          place_name_normalized: string
+          content: string
+          author: string
+          category?: string
+          likes?: number
+          created_at?: string
+        }
+        Update: {
+          id?: string
+          place_name?: string
+          place_name_normalized?: string
+          content?: string
+          author?: string
+          category?: string
+          likes?: number
+          created_at?: string
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never
