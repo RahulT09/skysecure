@@ -8,7 +8,7 @@ A premium, AI-powered weather companion built with React & TypeScript. Get real-
 ![TailwindCSS](https://img.shields.io/badge/Tailwind_CSS-3-06B6D4?logo=tailwindcss&logoColor=white)
 ![Gemini AI](https://img.shields.io/badge/Gemini_AI-2.0_Flash-4285F4?logo=google&logoColor=white)
 
----
+---  
 
 ## ✨ Features
 
