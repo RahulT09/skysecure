@@ -2,7 +2,7 @@
 
 A premium, AI-powered weather companion built with React & TypeScript. Get real-time weather data, intelligent condition analysis, and personalized advice tailored to your needs — whether you're a farmer, traveler, or just planning your day.   
 
-![React](https://img.shields.io/badge/React-18-61DAFB?logo=react&logoColor=white)
+![React](https://img.shields.io/badge/React-18-61DAFB?logo=react&logoColor=white)   
 ![TypeScript](https://img.shields.io/badge/TypeScript-5-3178C6?logo=typescript&logoColor=white)
 ![Vite](https://img.shields.io/badge/Vite-5-646CFF?logo=vite&logoColor=white)
 ![TailwindCSS](https://img.shields.io/badge/Tailwind_CSS-3-06B6D4?logo=tailwindcss&logoColor=white)
