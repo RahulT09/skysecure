@@ -11,7 +11,7 @@ A premium, AI-powered weather companion built with React & TypeScript. Get real-
 ---  
 
 ## ✨ Features
-
+  
 ### 🌦️ Real-Time Weather
 - Live weather data via **OpenWeatherMap API**
 - Auto-detects user location via geolocation
